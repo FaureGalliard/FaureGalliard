@@ -20,6 +20,7 @@ jobs:
           base: header, activity, repositories
           isocalendar: yes
           languages: yes
+
           output_action: commit
-          output_branch: output
+          committer_branch: output
           output_filename: github-metrics.svg
