@@ -57,7 +57,7 @@
 - GitHub: [FaureGalliard](https://github.com/FaureGalliard)
 - LinkedIn: [angelcrispin](https://www.linkedin.com/in/angelcrispin/)
 - Email: angelcrispinvaldivia@gmail.com
-- Web: [angelcrispin.dev](www.angelcrispin.dev)
+- Web: www.angelcrispin.dev
 ## 🌐 Socials:
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?logo=linkedin&logoColor=white)](https://linkedin.com/in/angelcrispin) [![email](https://img.shields.io/badge/Email-D14836?logo=gmail&logoColor=white)](mailto:angelcrispinvaldivia@gmail.com)
 
