@@ -39,7 +39,7 @@
  <img src="https://komarev.com/ghpvc/?username=fauregalliard&label=Profile%20views&color=333B45&style=flat" alt="fauregalliard" /> </p>
 
 ---
-![GitHub Metrics](https://raw.githubusercontent.com/fauregalliard/fauregalliard/main/github-metrics.svg)
+![GitHub Metrics](https://raw.githubusercontent.com/fauregalliard/fauregalliard/output/github-metrics.svg)
 
 # About Me: 
 
