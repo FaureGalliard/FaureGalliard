@@ -1,12 +1,15 @@
-name: GitHub Metrics
+name: Metrics
 
 on:
   schedule:
-    - cron: "0 0 * * *" # una vez al día
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  metrics:
+  github-metrics:
     runs-on: ubuntu-latest
     steps:
       - uses: lowlighter/metrics@latest
@@ -14,8 +17,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: fauregalliard
           template: classic
-          base: header, activity, community, repositories
+          base: header, activity, repositories
           isocalendar: yes
           languages: yes
-          languages.indepth: yes
-          languages.limit: 6
+          output_action: commit
+          output_branch: output
+          output_filename: github-metrics.svg
