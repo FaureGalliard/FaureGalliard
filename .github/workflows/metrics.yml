@@ -1,0 +1,21 @@
+name: GitHub Metrics
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # una vez al día
+  workflow_dispatch:
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: lowlighter/metrics@latest
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          user: fauregalliard
+          template: classic
+          base: header, activity, community, repositories
+          isocalendar: yes
+          languages: yes
+          languages.indepth: yes
+          languages.limit: 6
