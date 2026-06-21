@@ -1,0 +1,49 @@
+name: Supabase keepalive
+
+on:
+  schedule:
+    # Every 3 days at 07:00 UTC. Offset from the midnight metrics/snake jobs
+    # so the crons don't pile up at GitHub's busiest hour.
+    - cron: "0 7 */3 * *"
+  workflow_dispatch:
+
+# Minimal permissions: this job only calls out to Supabase, it never writes
+# back to the repo.
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping all Supabase projects
+        env:
+          PROJECTS: ${{ secrets.SUPABASE_PROJECTS }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PROJECTS:-}" ]; then
+            echo "::error::SUPABASE_PROJECTS secret is empty or not set."
+            exit 1
+          fi
+
+          fail=0
+          echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
+            name=$(echo "$project" | jq -r '.name // .url')
+            url=$(echo "$project"  | jq -r '.url')
+            key=$(echo "$project"  | jq -r '.key')
+
+            code=$(curl -s -o /dev/null -w "%{http_code}" \
+              "${url}/rest/v1/keepalive?select=id&limit=1" \
+              -H "apikey: ${key}" \
+              -H "Authorization: Bearer ${key}")
+
+            if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+              echo "✅ ${name} -> HTTP ${code}"
+            else
+              echo "::warning::❌ ${name} -> HTTP ${code}"
+              fail=1
+            fi
+          done
+
+          exit $fail
