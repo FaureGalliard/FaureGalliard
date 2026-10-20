@@ -2,9 +2,10 @@ name: Supabase keepalive
 
 on:
   schedule:
-    # Every 3 days at 07:00 UTC. Offset from the midnight metrics/snake jobs
-    # so the crons don't pile up at GitHub's busiest hour.
-    - cron: "0 7 */3 * *"
+    # Daily at 07:00 UTC. Offset from the midnight metrics/snake jobs so the
+    # crons don't pile up at GitHub's busiest hour. A read every 3 days was not
+    # enough for Supabase to count the project as active.
+    - cron: "0 7 * * *"
   workflow_dispatch:
 
 # Minimal permissions: this job only calls out to Supabase, it never writes
@@ -20,30 +21,62 @@ jobs:
         env:
           PROJECTS: ${{ secrets.SUPABASE_PROJECTS }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
 
           if [ -z "${PROJECTS:-}" ]; then
             echo "::error::SUPABASE_PROJECTS secret is empty or not set."
             exit 1
           fi
+          if ! echo "$PROJECTS" | jq -e 'type == "array" and length > 0' >/dev/null 2>&1; then
+            echo "::error::SUPABASE_PROJECTS is not a non-empty JSON array."
+            exit 1
+          fi
+
+          # Prints "<http code> <body>"; curl failures (DNS, timeout) come back as 000.
+          call() {
+            local method=$1 url=$2 key=$3
+            local body code
+            body=$(mktemp)
+            code=$(curl -s -o "$body" -w "%{http_code}" --max-time 30 -X "$method" "$url" \
+              -H "apikey: ${key}" \
+              -H "Authorization: Bearer ${key}" \
+              -H "Content-Type: application/json" \
+              ${4:+-d "$4"}) || code=000
+            echo "$code $(head -c 200 "$body")"
+            rm -f "$body"
+          }
+
+          ok() { [ "$1" -ge 200 ] && [ "$1" -lt 300 ]; }
 
           fail=0
-          echo "$PROJECTS" | jq -c '.[]' | while read -r project; do
-            name=$(echo "$project" | jq -r '.name // .url')
-            url=$(echo "$project"  | jq -r '.url')
-            key=$(echo "$project"  | jq -r '.key')
+          total=0
+          # Process substitution instead of a pipe so `fail` survives the loop.
+          while read -r project; do
+            total=$((total + 1))
+            url=$(echo "$project" | jq -r '.url' | sed 's:/*$::')
+            key=$(echo "$project" | jq -r '.key')
+            ref=$(echo "$url" | sed -E 's#https?://([^.]+)\..*#\1#')
+            name=$(echo "$project" | jq -r ".name // \"$ref\"")
+            label="${name} (${ref})"
 
-            code=$(curl -s -o /dev/null -w "%{http_code}" \
-              "${url}/rest/v1/keepalive?select=id&limit=1" \
-              -H "apikey: ${key}" \
-              -H "Authorization: Bearer ${key}")
-
-            if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
-              echo "✅ ${name} -> HTTP ${code}"
+            # 1. Write: bump last_ping / pings through the RPC.
+            read -r code body < <(call POST "${url}/rest/v1/rpc/keepalive_ping" "$key" '{}')
+            if ok "$code"; then
+              echo "✅ ${label} write -> HTTP ${code} ${body}"
             else
-              echo "::warning::❌ ${name} -> HTTP ${code}"
+              echo "::error::❌ ${label} write -> HTTP ${code} ${body}"
               fail=1
             fi
-          done
 
+            # 2. Read: confirm the row is there.
+            read -r code body < <(call GET "${url}/rest/v1/keepalive?select=id,last_ping,pings&limit=1" "$key")
+            if ok "$code"; then
+              echo "✅ ${label} read  -> HTTP ${code} ${body}"
+            else
+              echo "::error::❌ ${label} read  -> HTTP ${code} ${body}"
+              fail=1
+            fi
+          done < <(echo "$PROJECTS" | jq -c '.[]')
+
+          echo "Pinged ${total} project(s)."
           exit $fail
