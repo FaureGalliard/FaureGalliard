@@ -44,8 +44,8 @@
 # About Me: 
 
 <br><br>
-- :school: I am a `Junior` student of **Software Engineering** and **Statistics** at **UPC** & **UNMSM** (Peru).
-- :trophy: Participant in competitive programming contests such as `IEEE ICPC` and other university-level competitions.
+- :school: I am a **Software Engineering** and **Statistician**.
+- :trophy: I have participated  in competitive programming contests such as `IEEE ICPC` and other university-level competitions.
 - :technologist: I love using **software and engineering** as solutions for real-world `problems`.
 - :computer: Competitive programmer on `Codeforces`, `AtCoder`, `LeetCode`, `CodeChef`, and other platforms.
 - :nerd_face: Always `learning new things` and improving my technical skills.
